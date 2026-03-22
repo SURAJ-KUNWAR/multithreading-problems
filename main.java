@@ -34,56 +34,48 @@
 
         // producer-consumer
 
-        Semaphore empty = new Semaphore(5);
-        Semaphore full = new Semaphore(0);
-        Semaphore lock = new Semaphore(1);
-        Queue<Integer> buffer = new LinkedList<>();
+               Queue<Integer> q = new LinkedList<>();
+        Semaphore cSema = new Semaphore(0);
+        Semaphore pSema = new Semaphore(5);
 
         Runnable producer = () -> {
-            int item = 1;
+            int item = 0;
             while(true){
+
                 try{
-                    empty.acquire();
-                    lock.acquire();
-
-                    buffer.add(item);
-                    System.out.println(item + "produced");
+                    pSema.acquire();
                     item++;
-                    lock.release();
-                    full.release();
-
-
-
-                } catch (Exception e) {
+                    q.add(item);
+                    System.out.println("Produced" + " " + item);
+                    cSema.release();
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
-
-
             }
         };
+
         Runnable consumer = () -> {
             while(true){
+
                 try{
-                   full.acquire();
-                   lock.acquire();
-
-                   int item = buffer.poll();
-                   System.out.println(item + "consumed");
-                    lock.release();
-                   empty.release();
-
-                   Thread.sleep(1000);
-                } catch (Exception e) {
+                    cSema.acquire();
+                    int item = q.remove();
+                    System.out.println("Consumed" + " " + item);
+                    pSema.release();
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
             }
         };
 
-        Thread producerThread = new Thread(producer);
-        Thread consumerThread = new Thread(consumer);
-//        producerThread.start();
-//        consumerThread.start();
+        new Thread(producer).start();
+        new Thread(consumer).start();
 
+
+
+        // print abc
         Semaphore printASema = new Semaphore(1);
         Semaphore printBSema = new Semaphore(0);
         Semaphore printCSema = new Semaphore(0);
