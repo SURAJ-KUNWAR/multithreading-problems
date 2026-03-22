@@ -34,44 +34,52 @@
 
         // producer-consumer
 
-               Queue<Integer> q = new LinkedList<>();
-        Semaphore cSema = new Semaphore(0);
-        Semaphore pSema = new Semaphore(5);
+                       Queue<Integer> q = new LinkedList<>();
+         Semaphore pSema = new Semaphore(5);
+         Semaphore cSema = new Semaphore(0);
 
-        Runnable producer = () -> {
-            int item = 0;
-            while(true){
 
-                try{
-                    pSema.acquire();
-                    item++;
-                    q.add(item);
-                    System.out.println("Produced" + " " + item);
-                    cSema.release();
-                    Thread.sleep(500);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        };
+         Runnable producer = () -> {
+             int item = 0;
+             while(true){
+                 try{
+                     pSema.acquire();
+                     item++;
+                     synchronized (q){
+                         q.add(item);
+                     }
 
-        Runnable consumer = () -> {
-            while(true){
+                     System.out.println("Produced"  +" " + item);
+                     cSema.release();
+                     Thread.sleep(500);
+                 }catch (InterruptedException e){
+                     throw new RuntimeException(e);
+                 }
 
-                try{
-                    cSema.acquire();
-                    int item = q.remove();
-                    System.out.println("Consumed" + " " + item);
-                    pSema.release();
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        };
+             }
+         };
 
-        new Thread(producer).start();
-        new Thread(consumer).start();
+
+         Runnable consumer = () -> {
+             while(true){
+                 try{
+                     cSema.acquire();
+                     synchronized (q){
+                         System.out.println("Consuned" + " " + q.remove());
+                     }
+
+                     pSema.release();
+                     Thread.sleep(1000);
+                 } catch (InterruptedException e) {
+                     throw new RuntimeException(e);
+                 }
+
+             }
+         };
+
+         new Thread(producer).start();
+         new Thread(consumer).start();
+
 
 
 
